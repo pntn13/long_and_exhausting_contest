@@ -9,108 +9,128 @@ struct List {
     List(int _x): x(_x) {}
 
     ~List() {
-        if (next != nullptr) {
-            delete next;
-        }
+        delete next;
     }
 
     int x = 0;
     List* next = nullptr;
 };
 
-List* merge(List* a, List* b) {
-    if (a == nullptr) {
-        return b;
+struct MyList {
+    List* begin = nullptr;
+    List* end = nullptr;
+
+    MyList() {}
+
+    MyList(int _x) {
+        List* t = new List(_x);
+        begin = end = t;
     }
-    if (b == nullptr) {
-        return a;
-    }
-    if (a->x > b->x) {
-        swap(a, b);
-    }
-    List* res = new List(a->x);
-    List* fin = res;
-    for (auto i = a->next, j = b;;) {
-        if (i == nullptr) {
-            swap(i, j);
+
+    MyList(List* l) {
+        begin = l;
+        while (l->next != nullptr) {
+            l = l->next;
         }
-        if (j == nullptr) {
-            while (i != nullptr) {
-                List* t = new List(i->x);
-                fin->next = t;
-                fin = t;
-                i = i->next;
-            }
+        end = l;
+    }
+
+    ~MyList() {
+        delete begin;
+    }
+
+    void push_back(int y) {
+        if (begin == nullptr) {
+            List* t = new List(y);
+            begin = end = t;
+            return;
+        }
+        List* t = new List(y);
+        end->next = t;
+        end = t;
+    }
+
+    void push_back(List* y) {
+        y->next = nullptr;
+        if (begin == nullptr) {
+            begin = end = y;
+            return;
+        }
+        end->next = y;
+        end = y;
+    }
+};
+
+ostream& operator<<(ostream& out, const MyList &a) {
+    for (auto i = *a.begin;; i = *i.next) {
+        out << i.x << " ";
+        if (i.next == nullptr) {
             break;
         }
-        if (i->x > j->x) {
-            swap(i, j);
-        }
-
-        List* t = new List(i->x);
-        fin->next = t;
-        fin = t;
-        i = i->next;
-    }
-    return res;
-}
-
-List* sort(List* a) {
-    if (a->next == nullptr) {
-        List* res = new List(a->x);
-        return res;
-    }
-    auto fin = a;
-    List* l = new List(fin->x);
-    auto finl = l;
-    fin = fin->next;
-    List* r = new List(fin->x);
-    fin = fin->next;
-    auto finr = r;
-    for (; fin != nullptr; fin = fin->next) {
-        List* t = new List(fin->x);
-        finl->next = t;
-        finl = t;
-        swap(l, r);
-        swap(finl, finr);
-    }
-    List* sl = sort(l);
-    List* sr = sort(r);
-    List* res = merge(sl, sr);
-
-    delete sl;
-    delete sr;
-    delete l;
-    delete r;
-
-    return res;
-}
-
-ostream& operator<<(ostream& out, List* a) {
-    for (auto i = a; i != nullptr; i = i->next) {
-        out << i->x << " ";
     }
     return out;
 }
+
+void merge(MyList& a, MyList& b, MyList& res) {
+    bool aover = false, bover = false;
+    while (!(aover && bover)) {
+        if (!aover && (bover || a.begin->x <= b.begin->x)) {
+            auto j = a.begin->next;
+            res.push_back(a.begin);
+            a.begin = j;
+            if (a.begin == nullptr) {
+                a.end = nullptr;
+                aover = true;
+            }
+        } else {
+            auto j = b.begin->next;
+            res.push_back(b.begin);
+            b.begin = j;
+            if (b.begin == nullptr) {
+                b.end = nullptr;
+                bover = true;
+            }
+        }
+    }
+}
+
+void sort(MyList& a) {
+    if (a.begin == a.end) {
+        return;
+    }
+    MyList l, r;
+    bool flag = true;
+    for (auto i = a.begin; i != nullptr;) {
+        auto j = i->next;
+        if (flag) {
+            l.push_back(i);
+        } else {
+            r.push_back(i);
+        }
+        flag ^= 1;
+
+        i = j;
+    }
+    a.begin = a.end = nullptr;
+    sort(l);
+    sort(r);
+    merge(l, r, a);
+}
+
 
 int main() {
     assert(freopen("input.txt", "r", stdin));
 
     int n;
     cin >> n;
-    int x;
-    cin >> x;
-    List* a = new List(x);
-    List* fin = a;
-    for (int i = 1; i < n; ++i) {
+
+    MyList a;
+    for (int i = 0; i < n; ++i) {
+        int x;
         cin >> x;
-        List* t = new List(x);
-        fin->next = t;
-        fin = t;
+        a.push_back(x);
     }
 
-    List* res = sort(a);
-    cout << res << endl;
-    delete res;
-    delete a;
+    sort(a);
+    cout << a << endl;
 }
