@@ -132,5 +132,5 @@ int main() {
 
         used.clear();
         used.resize(n + 1);
-    }
+    } // just useless comment to make it look less ugly 
 }
