@@ -2,14 +2,15 @@
 
 using namespace std;
 
+vector<int> ps;
+
 struct Edge {
     int from = -1,
         to = -1,
         c = 0,
         f = 0,
         w = 0,
-        num = 0,
-        p = 0;
+        num = 0;
 
     Edge *r = nullptr;
 
@@ -21,6 +22,10 @@ struct Edge {
         c = _c;
         w = _w;
         num = _num;
+    }
+
+    int wp() const {
+        return w + ps[from] - ps[to];
     }
 };
 
@@ -55,7 +60,50 @@ int fb() {
         now = pr[now]->to;
     }
 
+    ps = d;
     return d[t];
+}
+
+int dij() {
+    vector<int> d(MX, INF);
+    vector<Edge *> pr(MX);
+	d[s] = 0;
+
+	set<pair<int, int>> st;
+	st.insert({d[s], s});
+	while (!st.empty()) {
+		int now = st.begin()->second;
+		st.erase(st.begin());
+
+		for (int i = 0; i < gr[now].size(); ++i) {
+			auto edge = gr[now][i];
+			if (edge->c - edge->f > 0) {
+                if (d[edge->to] > d[edge->from] + edge->wp()) {
+                    st.erase({d[edge->to], edge->to});
+                    d[edge->to] = d[edge->from] + edge->wp();
+                    pr[edge->to] = edge->r;
+                    st.insert({d[edge->to], edge->to});
+                }
+            }
+		}
+	}
+
+	if (d[t] == INF) return INF;
+    for (int i = 1; i <= n; ++i) {
+        ps[i] = d[i]; /// neerc said it's ok
+    }
+
+    int real_ans = 0;
+
+    int now = t;
+    while (now != s) {
+        pr[now]->f -= 1;
+        pr[now]->r->f += 1;
+        real_ans += pr[now]->r->w;
+        now = pr[now]->to;
+    }
+
+    return real_ans;
 }
 
 bool dfs2(int v, vector<int> &way) {
@@ -107,7 +155,12 @@ int main() {
 
     double res = 0;
     for (int i = 1; i <= k; ++i) {
-        int localans = fb();
+        int localans;
+        if (i == 1) {
+            localans = fb();
+        } else {
+            localans = dij();
+        }
         if (localans == INF) {
             cout << -1 << endl;
             return 0;
@@ -132,5 +185,5 @@ int main() {
 
         used.clear();
         used.resize(n + 1);
-    } // just useless comment to make it look less ugly yep
+    }
 }
